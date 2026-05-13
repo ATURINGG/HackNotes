@@ -11,6 +11,10 @@ Normalmente esta vulnerabilidad se da por falta de autorizacion en las peticione
 insertar imagen donde se va una consulta autenticada con jwt y que despues se vea un json que sea vulnerable a BOLA con el ejemplo de los pedidos del parrafo anterior
 
 ### Como mitigarlo?
+- usar los scopes cuando se haga oauth 2.0
+- realizar modelados de roles y perfiles a las apis a desplegar
+- limitar todos los endpoints de las apis con su respectiva autorizacion
+
 
 
 
