@@ -22,48 +22,46 @@ BOLA no ocurre porque el usuario no esté autenticado, sino porque la API no val
 
 
 
-## Mitigación  de BOLA en APIs: diseño, desarrollo y pruebas
+## Mitigación de BOLA en APIs en 3 pasos
 
-Mitigar **BOLA** no se logra “poniendo JWT” ni “activando OAuth 2.0”. Eso solo resuelve parte de la **autenticación**. La solución de raíz es implementar un modelo fuerte de **autorización a nivel de objeto**, donde cada petición valide si el usuario tiene permiso específico sobre el recurso que está intentando consultar, modificar o eliminar.
+Mitigar BOLA no consiste solo en usar JWT, OAuth 2.0 o un login seguro. La solución real es validar que cada usuario tenga permiso sobre el recurso específico que quiere consultar, modificar o eliminar.
 
----
+### 1. Diseñar el modelo de autorización
 
-## 1. Desde el diseño: definir el modelo de autorización antes de construir la API
+Antes de construir la API, define claramente:
+```
+→ Qué roles existen.
+→ Qué recursos puede ver cada rol.
+→ Qué acciones puede ejecutar.
+→ Bajo qué condiciones puede acceder a la información.
+```
+```
+Cliente → solo puede ver sus propios pedidos.
+Repartidor → solo puede ver pedidos asignados.
+Administrador → puede gestionar pedidos según sus permisos.
+```
+### 2. Implementar controles en el backend
 
-Antes de desarrollar los endpoints, se debe definir claramente **quién puede acceder a qué recurso, bajo qué condición y para qué acción**.
+La autorización debe validarse en el backend, no en el frontend. Cada endpoint que reciba un ID debe comprobar:
+```
+→ ¿El usuario está autenticado?
+→ ¿Tiene el scope correcto?
+→ ¿Su rol permite esta acción?
+→ ¿El recurso le pertenece o está asignado a él?
+```
+### 3. Probar escenarios de abuso
 
-No basta con decir:
-
-> “El usuario está autenticado.”
-
-La pregunta correcta es:
-
-> “¿Este usuario puede ejecutar esta acción sobre este objeto específico?”
-
-Por ejemplo, en una app como **deliveryhack**:
-
-| Rol | Recurso | Acción permitida |
-|---|---|---|
-| Repartidor | Pedido asignado | Consultar ruta y estado |
-| Repartidor | Pedido de otro repartidor | Denegado |
-| Cliente | Pedido propio | Consultar estado |
-| Cliente | Pedido de otro cliente | Denegado |
-| Administrador | Todos los pedidos | Consultar, asignar y gestionar |
-
-Desde diseño se deben definir controles como:
-
-- **RBAC**: autorización basada en roles.
-- **ABAC**: autorización basada en atributos.
-- **ReBAC**: autorización basada en relaciones entre usuario y recurso.
-- **Scopes OAuth 2.0**: permisos funcionales sobre acciones.
-- **Claims en JWT**: atributos del usuario, rol, tenant, permisos o contexto.
-- **CIAM/IAM**: plataforma centralizada para identidad, autenticación y gobierno de acceso.
-
-Ejemplo de scopes:
-
-```text
-pedidos:read
-pedidos:update
-pedidos:assign
-pedidos:admin
+No pruebes solo el “camino feliz”. También valida intentos de acceso indebido. Casos mínimos:
+```
+→ Usuario A consulta datos de Usuario A → permitido.
+→ Usuario A consulta datos de Usuario B → denegado.
+→ Cliente consulta pedido de otro cliente → denegado.
+→ Repartidor consulta pedido no asignado → denegado.
+→ Usuario con token válido pero sin permiso → denegado.
+```
+Para mitigar BOLA, cada petición debe validar tres cosas:
+```
+Identidad → ¿quién eres?
+Permiso → ¿qué puedes hacer?
+Relación → ¿puedes hacerlo sobre este recurso?
 ```
