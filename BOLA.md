@@ -1,10 +1,7 @@
 # 🆔 ¿Qué carajos es BOLA y por qué OWASP la considera la mayor amenaza para las APIs?
 > Cuando estar autenticado no significa estar autorizado
 
-Muchas personas al entregar los requerimientos de seguridad para el desarrollo de APIs se centran mas en la autenticacion que en la autorizacion, por eso desde que tenga JWT u OUATH 2.0 implementado ya estamos cumplimiento y protegiendo nuestra API, pero la realidad es otra. ¿Que sucede si el usuario que se autentica a tus servicios pregunta por los datos de otro usuario?.
-Eso es BOLA (Broken Object Level Autorization) es una amenaza que permite a los atacantes realizas peticiones no autorizadas dentro de una misma sesion.
-
-una vulnerabilidad BOLA ocurre por una falla en la autorización de las peticiones. Esto significa que un usuario puede estar correctamente autenticado en una aplicación, pero eso no quiere decir que tenga permiso para consultar o modificar información que pertenece a otros usuarios.Para entenderlo mejor, primero debemos diferenciar dos conceptos clave: **autenticación y autorización.**
+Una vulnerabilidad BOLA ocurre por una falla en la autorización de las peticiones. Esto significa que un usuario puede estar correctamente autenticado en una aplicación, pero eso no quiere decir que tenga permiso para consultar o modificar información que pertenece a otros usuarios.Para entenderlo mejor, primero debemos diferenciar dos conceptos clave: **autenticación y autorización.**
 
 **La autenticación** responde a la pregunta: ¿quién eres? Es el proceso mediante el cual un sistema verifica la identidad de un usuario. Por ejemplo, cuando una persona ingresa su usuario, contraseña y un segundo factor de autenticación, el sistema valida que realmente sea quien dice ser. Esta verificación puede apoyarse en tres tipos de factores: algo que sabes, como una contraseña; algo que tienes, como un código 2FA o un token; y algo que eres, como una huella o reconocimiento facial.
 
@@ -25,10 +22,50 @@ BOLA no ocurre porque el usuario no esté autenticado, sino porque la API no val
 
 
 
-### Como mitigarlo?
-- usar los scopes cuando se haga oauth 2.0
-- realizar modelados de roles y perfiles a las apis a desplegar
-- limitar todos los endpoints de las apis con su respectiva autorizacion
+## Mitigación  de BOLA en APIs: diseño, desarrollo y pruebas
+
+Mitigar **BOLA** no se logra “poniendo JWT” ni “activando OAuth 2.0”. Eso solo resuelve parte de la **autenticación**. La solución de raíz es implementar un modelo fuerte de **autorización a nivel de objeto**, donde cada petición valide si el usuario tiene permiso específico sobre el recurso que está intentando consultar, modificar o eliminar.
+
+---
+
+## 1. Desde el diseño: definir el modelo de autorización antes de construir la API
+
+Antes de desarrollar los endpoints, se debe definir claramente **quién puede acceder a qué recurso, bajo qué condición y para qué acción**.
+
+No basta con decir:
+
+> “El usuario está autenticado.”
+
+La pregunta correcta es:
+
+> “¿Este usuario puede ejecutar esta acción sobre este objeto específico?”
+
+Por ejemplo, en una app como **deliveryhack**:
+
+| Rol | Recurso | Acción permitida |
+|---|---|---|
+| Repartidor | Pedido asignado | Consultar ruta y estado |
+| Repartidor | Pedido de otro repartidor | Denegado |
+| Cliente | Pedido propio | Consultar estado |
+| Cliente | Pedido de otro cliente | Denegado |
+| Administrador | Todos los pedidos | Consultar, asignar y gestionar |
+
+Desde diseño se deben definir controles como:
+
+- **RBAC**: autorización basada en roles.
+- **ABAC**: autorización basada en atributos.
+- **ReBAC**: autorización basada en relaciones entre usuario y recurso.
+- **Scopes OAuth 2.0**: permisos funcionales sobre acciones.
+- **Claims en JWT**: atributos del usuario, rol, tenant, permisos o contexto.
+- **CIAM/IAM**: plataforma centralizada para identidad, autenticación y gobierno de acceso.
+
+Ejemplo de scopes:
+
+```text
+pedidos:read
+pedidos:update
+pedidos:assign
+pedidos:admin
 
 
 
